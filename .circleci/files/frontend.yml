@@ -5,6 +5,7 @@ Parameters:
   ID:
     Description: Unique identifier.
     Type: String
+    Default: kk1j287dhjppmz439
 
 Resources:
   WebsiteBucket:
