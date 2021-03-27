@@ -7,20 +7,29 @@ commands:
       # Add parameter here   
     steps:
       - run:
-          name: Install dependencies
-          when: on_fail
+          name: Delete all files in the current S3 bucket
           command: |
-            apk add --no-cache python3 py3-pip
-            pip3 install --upgrade pip
-            pip3 install awscli
-            rm -rf /var/cache/apk/*
+            if aws s3api head-bucket --bucket udapeople-${CIRCLE_WORKFLOW_ID}
+            then
+              aws s3 rm s3://udapeople-${CIRCLE_WORKFLOW_ID}/ --recursive
+            fi
+          when: on_fail
       - run:
-          name: Destroy environments
-          when: on_fail
+          name: Delete the current AWS CloudFormation stacks
           command: |
-            aws cloudformation delete-stack --stack-name "my-backend-stack-$CIRCLE_WORKFLOW_ID"
-            aws s3 rm --recursive s3://udapeople-$CIRCLE_WORKFLOW_ID
-            aws cloudformation delete-stack --stack-name "my-frontend-stack-$CIRCLE_WORKFLOW_ID"
+            if aws cloudformation wait stack-exists --stack-name udapeople-cloudfront
+            then
+              aws cloudformation delete-stack --stack-name udapeople-cloudfront
+            fi
+            if aws cloudformation wait stack-exists --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID}
+            then
+              aws cloudformation delete-stack --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID}
+            fi
+            if aws cloudformation wait stack-exists --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID}
+            then
+              aws cloudformation delete-stack --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID}
+            fi
+          when: on_fail
 
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow.
