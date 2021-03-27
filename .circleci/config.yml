@@ -7,11 +7,20 @@ commands:
       # Add parameter here   
     steps:
       - run:
+          name: Install dependencies
+          when: on_fail
+          command: |
+            apk add --no-cache python3 py3-pip
+            pip3 install --upgrade pip
+            pip3 install awscli
+            rm -rf /var/cache/apk/*
+      - run:
           name: Destroy environments
           when: on_fail
           command: |
-            # Your code here
-            exit 1
+            aws cloudformation delete-stack --stack-name "my-backend-stack-$CIRCLE_WORKFLOW_ID"
+            aws s3 rm --recursive s3://udapeople-$CIRCLE_WORKFLOW_ID
+            aws cloudformation delete-stack --stack-name "my-frontend-stack-$CIRCLE_WORKFLOW_ID"
 
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow.
@@ -135,6 +144,9 @@ jobs:
     steps:
       - checkout
       - run:
+            name: Install dependencies
+            command: yum -y install tar gzip
+      - run:
           name: Ensure back-end infrastructure exists
           command: |
             aws cloudformation deploy \
@@ -153,16 +165,20 @@ jobs:
       - run:
           name: Add back-end ip to ansible inventory
           command: |
-            echo "[web]" > inventory
+            echo "[web]" > .circleci/ansible/inventory.txt
             aws ec2 describe-instances \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
-              --filters "Name=tag:project,Values=udapeople"
-              --output text >> inventory
+              --filters "Name=tag:Name,Values=backend-$CIRCLE_WORKFLOW_ID"
+              --output text >> .circleci/ansible/inventory.txt
+            cat .circleci/ansible/inventory.txt
+            pwd
+            ls
+
       - persist_to_workspace:
           root: ~/
           paths:
             - project/.circleci/ansible/inventory.txt
-      # Here's where you will add some code to rollback on failure      
+      - destroy-environment
 
   configure-infrastructure:
     docker:
