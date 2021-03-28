@@ -239,6 +239,7 @@ jobs:
           command: |
             cd backend
             npm install
+            npm audit fix
             npm run build
             npm run migrations > migration_result.txt
             cat migration_result.txt
@@ -248,9 +249,9 @@ jobs:
             cd backend
             if grep "executed successfully" migration_result.txt
             then
-            curl -H "Content-Type: text/plain" -H "token: 21655ba8-a199-4ae9-8b32-0cf4daa7e3a3" --request PUT --data "true" https://api.memstash.io/values/<< pipeline.id >>_migrations
+            curl -H "Content-Type: text/plain" -H "token: 1d047771-f81a-49bc-a509-94e48507aea9" --request PUT --data "true" https://api.memstash.io/values/<< pipeline.id >>_migrations
             else
-            curl -H "Content-Type: text/plain" -H "token: 21655ba8-a199-4ae9-8b32-0cf4daa7e3a3" --request PUT --data "false" https://api.memstash.io/values/<< pipeline.id >>_migrations
+            curl -H "Content-Type: text/plain" -H "token: 1d047771-f81a-49bc-a509-94e48507aea9" --request PUT --data "false" https://api.memstash.io/values/<< pipeline.id >>_migrations
             fi
       - revert-migrations
       - destroy-environment
